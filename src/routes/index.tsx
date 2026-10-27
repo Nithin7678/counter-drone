@@ -34,7 +34,7 @@ function Home() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const selected = drones.find((drone) => drone.id === selectedId) ?? drones[0];
+  const selected = drones.find((drone) => drone.id === selectedId) ?? drones[0]!;
   const criticalCount = drones.filter((drone) => drone.threat === "CRITICAL").length;
   const alertState = criticalCount > 0 ? "CRITICAL" : "NORMAL";
   const threatCounts = useMemo(() => ({
@@ -45,21 +45,22 @@ function Home() {
   }), [drones]);
 
   function acknowledge(action: "JAM RF" | "NEUTRALIZE" | "FRIENDLY") {
-    const current = drones.find((d) => d.id === selectedId);
+    const targetId = selectedId;
+    const current = drones.find((d) => d.id === targetId);
     if (!current) return;
     const temporaryThreat: Threat = action === "FRIENDLY" ? "FRIENDLY" : action === "JAM RF" ? "MEDIUM" : "LOW";
-    setDrones((all) => all.map((d) => d.id === selectedId ? { ...d, threat: temporaryThreat, alerts: action === "FRIENDLY" ? d.alerts : d.alerts + 1 } : d));
+    setDrones((all) => all.map((d) => d.id === targetId ? { ...d, threat: temporaryThreat, alerts: action === "FRIENDLY" ? d.alerts : d.alerts + 1 } : d));
     const message = action === "FRIENDLY"
-      ? selectedId + " marked FRIENDLY. Critical alert cleared for this target."
+      ? targetId + " marked FRIENDLY. Critical alert cleared for this target."
       : action === "JAM RF"
-        ? "Simulated RF-jam acknowledgement recorded for " + selectedId + "."
-        : "Simulated neutralization acknowledgement recorded for " + selectedId + ".";
+        ? "Simulated RF-jam acknowledgement recorded for " + targetId + "."
+        : "Simulated neutralization acknowledgement recorded for " + targetId + ".";
     setNotice(message);
-    setLastAction(action + " · " + selectedId);
+    setLastAction(action + " · " + targetId);
     if (action !== "FRIENDLY") {
       window.setTimeout(() => {
-        setDrones((all) => all.map((d) => d.id === selectedId && d.threat !== "FRIENDLY" ? { ...d, threat: "MEDIUM" } : d));
-        setNotice(selectedId + " returned to MEDIUM in the simulation.");
+        setDrones((all) => all.map((d) => d.id === targetId && d.threat !== "FRIENDLY" ? { ...d, threat: "MEDIUM" } : d));
+        setNotice(targetId + " returned to MEDIUM in the simulation.");
       }, 5000);
     }
   }
